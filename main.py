@@ -2,6 +2,8 @@ import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 from flagaccess import TOKEN
 
 bot = Bot(token=TOKEN)
@@ -9,7 +11,8 @@ dp = Dispatcher()
 
 user_TODO = {}
 
-# Create a keyboard with predefined messages
+valid_options = ["Introduction", "Github link", "Use TODO", "Help", "/start"]
+
 keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Introduction")],
@@ -20,44 +23,64 @@ keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+class TodoState(StatesGroup):
+    wait_for_input = State()
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("Hello, this bot is ready to use:", reply_markup=keyboard)
 
 @dp.message(F.text.contains('Introduction'))
-async def cmd_hello(message: types.Message):
-    await message.answer('This is bot that i use as TODO')
+async def cmd_hello(message: types.Message, state: FSMContext):
+    await message.answer('This is a bot that I use as a TODO.')
+    await state.clear()
 
 @dp.message(F.text.contains('Github link'))
-async def get_link(message: types.Message):
-    link = "https://github.com/WhiteSunOfSpace"
-    await message.answer(link)
+async def get_link(message: types.Message, state: FSMContext):
+    await message.answer("https://github.com/WhiteSunOfSpace")
+    await state.clear()
 
 @dp.message(F.text.contains('Help'))
-async def cmd_help(message: types.Message):
+async def cmd_help(message: types.Message, state: FSMContext):
     await message.answer('If you need help, contact us via whitesunofspace@mail.ru')
+    await state.clear()
 
-@dp.message(F.text.contains('Use TODO'))
-async def cmd_act(message: types.Message):
-    await message.answer('send me what you want to plan')
+async def cmd_act(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    if user_id not in user_TODO:
+        user_TODO[user_id] = []
 
-@dp.message()
-async def check_message(message: types.Message):
+    await message.answer('Send me what you want to plan.\nType "exit" to return to the main menu.')
+    await state.set_state(TodoState.wait_for_input)
+
+@dp.message(TodoState.wait_for_input)
+async def process_todo_input(message: types.Message, state: FSMContext):
+    if message.text.lower() == "exit":
+        await message.answer("You are in main menu now.", reply_markup=keyboard)
+        await state.clear()
+        return
+
+    user_id = message.from_user.id
+    user_TODO[user_id].append(message.text)
+    await message.answer("Saved! Send another or type 'exit'.")
+
+@dp.message(F.text.in_(valid_options))
+async def handle_valid_message(message: types.Message, state: FSMContext):
     if message.text == "Introduction":
         await cmd_hello(message)
     elif message.text == "Github link":
-        await cmd_hello(message)
+        await get_link(message)
     elif message.text == "Help":
-        await cmd_hello(message)
+        await cmd_help(message)
     elif message.text == "Use TODO":
-        await cmd_hello(message)
-    else:
-        await message.answer("Please, choose the provided options")
+        await cmd_act(message, state)
 
+@dp.message()
+async def handle_invalid_message(message: types.Message):
+    await message.answer("Please select an option from the menu.", reply_markup=keyboard)
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
