@@ -11,13 +11,14 @@ dp = Dispatcher()
 
 user_TODO = {}
 
-valid_options = ["Introduction", "Github link", "Use TODO", "Help", "/start"]
+valid_options = ["Introduction", "Github link", "Use TODO", "Help", "Show tasks", "/start"]
 
 keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Introduction")],
         [KeyboardButton(text="Github link")],
         [KeyboardButton(text="Use TODO")],
+        [KeyboardButton(text="Show tasks")],
         [KeyboardButton(text="Help")]
     ],
     resize_keyboard=True
@@ -33,6 +34,16 @@ async def cmd_start(message: types.Message):
 @dp.message(F.text.contains('Introduction'))
 async def cmd_hello(message: types.Message, state: FSMContext):
     await message.answer('This is a bot that I use as a TODO.')
+    await state.clear()
+
+@dp.message(F.text.contains('Show task'))
+async def cmd_hello(message: types.Message, state: FSMContext):
+    uid = message.from_user.id
+    if uid in user_TODO and user_TODO[uid]:
+        todo_list = "\n".join([f"- {task}" for task in user_TODO[uid]])
+        await message.answer(f"Your TODO is:\n{todo_list}")
+    else:
+        await message.answer('Your TODO is empty')
     await state.clear()
 
 @dp.message(F.text.contains('Github link'))
