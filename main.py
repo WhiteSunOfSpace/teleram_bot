@@ -48,7 +48,7 @@ async def cmd_hello(message: types.Message, state: FSMContext):
 async def cmd_hello(message: types.Message, state: FSMContext):
     uid = message.from_user.id
     if uid in user_TODO and user_TODO[uid]:
-        todo_list = "\n".join([f"- {task}" for task in user_TODO[uid]])
+        todo_list = "\n".join([f"{num}) {task}" for num, task in enumerate(user_TODO[uid], start=1)])
         await message.answer(f"Your TODO is:\n{todo_list}", reply_markup=keyboard)
     else:
         await message.answer('Your TODO is empty', reply_markup=keyboard)
@@ -69,7 +69,7 @@ async def cmd_act(message: types.Message, state: FSMContext):
     if user_id not in user_TODO:
         user_TODO[user_id] = []
 
-    await message.answer('You are in TODO menu now\n Send me task and i will save it', reply_markup=todo_keyboard)
+    await message.answer('You are in TODO menu now\nSend me task and i will save it', reply_markup=todo_keyboard)
     await state.set_state(TodoState.wait_for_input)
 
 @dp.message(TodoState.wait_for_input)
