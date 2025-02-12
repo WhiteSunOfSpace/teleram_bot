@@ -18,8 +18,16 @@ keyboard = ReplyKeyboardMarkup(
         [KeyboardButton(text="Introduction")],
         [KeyboardButton(text="Github link")],
         [KeyboardButton(text="Use TODO")],
-        [KeyboardButton(text="Show tasks")],
         [KeyboardButton(text="Help")]
+    ],
+    resize_keyboard=True
+)
+
+todo_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Show tasks")],
+        [KeyboardButton(text="Delete task")],
+        [KeyboardButton(text="Clear all")]
     ],
     resize_keyboard=True
 )
@@ -41,9 +49,9 @@ async def cmd_hello(message: types.Message, state: FSMContext):
     uid = message.from_user.id
     if uid in user_TODO and user_TODO[uid]:
         todo_list = "\n".join([f"- {task}" for task in user_TODO[uid]])
-        await message.answer(f"Your TODO is:\n{todo_list}")
+        await message.answer(f"Your TODO is:\n{todo_list}", reply_markup=keyboard)
     else:
-        await message.answer('Your TODO is empty')
+        await message.answer('Your TODO is empty', reply_markup=keyboard)
     await state.clear()
 
 @dp.message(F.text.contains('Github link'))
@@ -61,7 +69,7 @@ async def cmd_act(message: types.Message, state: FSMContext):
     if user_id not in user_TODO:
         user_TODO[user_id] = []
 
-    await message.answer('Send me what you want to plan.\nType "exit" to return to the main menu.')
+    await message.answer('You are in TODO menu now\n Send me task and i will save it', reply_markup=todo_keyboard)
     await state.set_state(TodoState.wait_for_input)
 
 @dp.message(TodoState.wait_for_input)
@@ -73,7 +81,7 @@ async def process_todo_input(message: types.Message, state: FSMContext):
 
     user_id = message.from_user.id
     user_TODO[user_id].append(message.text)
-    await message.answer("Saved! Send another or type 'exit'.")
+    await message.answer("Saved! Send another or type 'exit'.", reply_markup=todo_keyboard)
 
 @dp.message(F.text.in_(valid_options))
 async def handle_valid_message(message: types.Message, state: FSMContext):
