@@ -48,14 +48,20 @@ async def cmd_hello(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text.contains('Show task'))
-async def cmd_hello(message: types.Message, state: FSMContext):
+async def cmd_show(message: types.Message, state: FSMContext):
     uid = message.from_user.id
     if uid in user_TODO and user_TODO[uid]:
         todo_list = "\n".join([f"{num}) {task}" for num, task in enumerate(user_TODO[uid], start=1)])
         await message.answer(f"Your TODO is:\n{todo_list}", reply_markup=todo_keyboard)
     else:
-        await message.answer('Your TODO is empty', reply_markup=keyboard)
+        await message.answer('Your TODO is empty', reply_markup=todo_keyboard)
     await state.clear()
+
+@dp.message(F.text.contains('Clear all'))
+async def cmd_clear(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_TODO[user_id].clear()
+    await message.answer('All your tasks were deleted', reply_markup=keyboard)
 
 @dp.message(F.text.contains('Github link'))
 async def get_link(message: types.Message, state: FSMContext):
