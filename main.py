@@ -27,7 +27,8 @@ todo_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Show tasks")],
         [KeyboardButton(text="Delete task")],
-        [KeyboardButton(text="Clear all")]
+        [KeyboardButton(text="Clear all")],
+        [KeyboardButton(text="Exit")]
     ],
     resize_keyboard=True
 )
@@ -60,8 +61,15 @@ async def cmd_show(message: types.Message, state: FSMContext):
 @dp.message(F.text.contains('Clear all'))
 async def cmd_clear(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    user_TODO[user_id].clear()
+    if user_TODO[user_id]:
+        user_TODO[user_id].clear()
     await message.answer('All your tasks were deleted', reply_markup=keyboard)
+    await state.clear()
+
+@dp.message(F.text.contains('Exit'))
+async def cmd_ext(message: types.Message, state: FSMContext):
+    await message.answer('You are in main menu', reply_markup=keyboard)
+    await state.clear()
 
 @dp.message(F.text.contains('Github link'))
 async def get_link(message: types.Message, state: FSMContext):
