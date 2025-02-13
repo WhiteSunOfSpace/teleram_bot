@@ -34,23 +34,29 @@ todo_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+
 class TodoState(StatesGroup):
     wait_for_input = State()
+
 
 class DeleteState(StatesGroup):
     wait_for_input = State()
 
+
 class AddState(StatesGroup):
     wait_for_input = State()
+
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("Hello, this bot is ready to use:", reply_markup=keyboard)
 
+
 @dp.message(F.text.contains('Introduction'))
 async def cmd_hello(message: types.Message, state: FSMContext):
     await message.answer('This is a bot that I use as a TODO.')
     await state.clear()
+
 
 @dp.message(F.text.contains('Show task'))
 async def cmd_show(message: types.Message, state: FSMContext):
@@ -62,6 +68,7 @@ async def cmd_show(message: types.Message, state: FSMContext):
         await message.answer('Your TODO is empty', reply_markup=todo_keyboard)
     await state.clear()
 
+
 @dp.message(F.text.contains('Clear all'))
 async def cmd_clear(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -70,25 +77,30 @@ async def cmd_clear(message: types.Message, state: FSMContext):
     await message.answer('All your tasks were deleted', reply_markup=keyboard)
     await state.clear()
 
+
 @dp.message(F.text.contains('Exit'))
 async def cmd_ext(message: types.Message, state: FSMContext):
     await message.answer('You are in main menu', reply_markup=keyboard)
     await state.clear()
+
 
 @dp.message(F.text.contains('Github link'))
 async def get_link(message: types.Message, state: FSMContext):
     await message.answer("https://github.com/WhiteSunOfSpace")
     await state.clear()
 
+
 @dp.message(F.text.contains('Help'))
 async def cmd_help(message: types.Message, state: FSMContext):
     await message.answer('If you need help, contact us via whitesunofspace@mail.ru')
     await state.clear()
 
+
 @dp.message(F.text.contains('Add task'))
 async def cmd_add(message: types.Message, state: FSMContext):
     await message.answer('What you want to plan')
     await state.set_state(AddState.wait_for_input)
+
 
 @dp.message(AddState.wait_for_input)
 async def process_todo_add(message: types.Message, state: FSMContext):
@@ -97,10 +109,12 @@ async def process_todo_add(message: types.Message, state: FSMContext):
     await message.answer('Saved', reply_markup=todo_keyboard)
     await state.clear()
 
+
 @dp.message(F.text.contains('Delete task'))
 async def cmd_delete(message: types.Message, state: FSMContext):
     await message.answer('Put the number of task which need to delete')
     await state.set_state(DeleteState.wait_for_input)
+
 
 @dp.message(DeleteState.wait_for_input)
 async def process_todo_delete(message: types.Message, state: FSMContext):
@@ -114,12 +128,13 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
     await message.answer("Task is delete", reply_markup=todo_keyboard)
     await state.clear()
 
+
 async def cmd_act(message: types.Message):
     user_id = message.from_user.id
     if user_id not in user_TODO:
         user_TODO[user_id] = []
-
     await message.answer('You are in TODO menu now', reply_markup=todo_keyboard)
+
 
 @dp.message(F.text.in_(valid_options))
 async def handle_valid_message(message: types.Message):
@@ -132,9 +147,11 @@ async def handle_valid_message(message: types.Message):
     elif message.text == "Use TODO":
         await cmd_act(message)
 
+
 @dp.message()
 async def handle_invalid_message(message: types.Message):
     await message.answer("Please select an option from the menu.", reply_markup=keyboard)
+
 
 async def main():
     await dp.start_polling(bot)
