@@ -25,6 +25,7 @@ keyboard = ReplyKeyboardMarkup(
 
 todo_keyboard = ReplyKeyboardMarkup(
     keyboard=[
+        [KeyboardButton(text="Add task")],
         [KeyboardButton(text="Show tasks")],
         [KeyboardButton(text="Delete task")],
         [KeyboardButton(text="Clear all")],
@@ -37,6 +38,9 @@ class TodoState(StatesGroup):
     wait_for_input = State()
 
 class DeleteState(StatesGroup):
+    wait_for_input = State()
+
+class AddState(StatesGroup):
     wait_for_input = State()
 
 @dp.message(Command("start"))
@@ -81,6 +85,18 @@ async def cmd_help(message: types.Message, state: FSMContext):
     await message.answer('If you need help, contact us via whitesunofspace@mail.ru')
     await state.clear()
 
+@dp.message(F.text.contains('Add task'))
+async def cmd_add(message: types.Message, state: FSMContext):
+    await message.answer('What you want to plan')
+    await state.set_state(AddState.wait_for_input)
+
+@dp.message(AddState.wait_for_input)
+async def process_todo_add(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_TODO[user_id].append(message.text)
+    await message.answer('Saved', reply_markup=todo_keyboard)
+    await state.clear()
+
 @dp.message(F.text.contains('Delete task'))
 async def cmd_delete(message: types.Message, state: FSMContext):
     await message.answer('Put the number of task which need to delete')
@@ -98,27 +114,15 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
     await message.answer("Task is delete", reply_markup=todo_keyboard)
     await state.clear()
 
-async def cmd_act(message: types.Message, state: FSMContext):
+async def cmd_act(message: types.Message):
     user_id = message.from_user.id
     if user_id not in user_TODO:
         user_TODO[user_id] = []
 
-    await message.answer('You are in TODO menu now\nSend me task and i will save it', reply_markup=todo_keyboard)
-    await state.set_state(TodoState.wait_for_input)
-
-@dp.message(TodoState.wait_for_input)
-async def process_todo_input(message: types.Message, state: FSMContext):
-    if message.text.lower() == "exit":
-        await message.answer("You are in main menu now.", reply_markup=keyboard)
-        await state.clear()
-        return
-
-    user_id = message.from_user.id
-    user_TODO[user_id].append(message.text)
-    await message.answer("Saved! Send another or type 'exit'.", reply_markup=todo_keyboard)
+    await message.answer('You are in TODO menu now', reply_markup=todo_keyboard)
 
 @dp.message(F.text.in_(valid_options))
-async def handle_valid_message(message: types.Message, state: FSMContext):
+async def handle_valid_message(message: types.Message):
     if message.text == "Introduction":
         await cmd_hello(message)
     elif message.text == "Github link":
@@ -126,7 +130,7 @@ async def handle_valid_message(message: types.Message, state: FSMContext):
     elif message.text == "Help":
         await cmd_help(message)
     elif message.text == "Use TODO":
-        await cmd_act(message, state)
+        await cmd_act(message)
 
 @dp.message()
 async def handle_invalid_message(message: types.Message):
