@@ -11,7 +11,7 @@ dp = Dispatcher()
 
 user_TODO = {}
 
-valid_options = ["Introduction", "Github link", "Use TODO", "Help", "/start"]
+valid_options = ["Introduction", "Github link", "Use TODO", "Help"]
 
 keyboard = ReplyKeyboardMarkup(
     keyboard=[
@@ -72,7 +72,7 @@ async def cmd_show(message: types.Message, state: FSMContext):
 @dp.message(F.text == 'Clear all')
 async def cmd_clear(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if user_TODO[user_id]:
+    if user_id in user_TODO and user_TODO[user_id]:
         user_TODO[user_id].clear()
         await message.answer('All your tasks were deleted', reply_markup=keyboard)
     else:
@@ -107,6 +107,8 @@ async def cmd_add(message: types.Message, state: FSMContext):
 @dp.message(AddState.wait_for_input)
 async def process_todo_add(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
+    if user_id not in user_TODO:
+        user_TODO[user_id] = []
     user_TODO[user_id].append(message.text)
     await message.answer('Saved', reply_markup=todo_keyboard)
     await state.clear()
@@ -120,20 +122,23 @@ async def cmd_delete(message: types.Message, state: FSMContext):
 
 @dp.message(DeleteState.wait_for_input)
 async def process_todo_delete(message: types.Message, state: FSMContext):
-    try:
-        num = int(message.text)
-        user_id = message.from_user.id
-        temp = []
-        if num - 1 < 0 or num > len(user_TODO[user_id]):
-            await message.answer("Wrong number of input", reply_markup=todo_keyboard)
-        else:
-            for i in range(len(user_TODO[user_id])):
-                if i != num - 1:
-                    temp.append(user_TODO[user_id][i])
-            user_TODO[user_id] = temp
-            await message.answer("Task is deleted", reply_markup=todo_keyboard)
-    except:
-        await message.answer("Please put number not words", reply_markup=todo_keyboard)
+    user_id = message.from_user.id
+    if user_id not in user_TODO:
+        await message.answer('Your TODO list is empty', reply_markup=todo_keyboard)
+    else:
+        try:
+            num = int(message.text)
+            temp = []
+            if num - 1 < 0 or num > len(user_TODO[user_id]):
+                await message.answer("Wrong number of input", reply_markup=todo_keyboard)
+            else:
+                for i in range(len(user_TODO[user_id])):
+                    if i != num - 1:
+                        temp.append(user_TODO[user_id][i])
+                user_TODO[user_id] = temp
+                await message.answer("Task is deleted", reply_markup=todo_keyboard)
+        except:
+            await message.answer("Please put number not words", reply_markup=todo_keyboard)
     await state.clear()
 
 
