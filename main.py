@@ -74,7 +74,9 @@ async def cmd_clear(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     if user_TODO[user_id]:
         user_TODO[user_id].clear()
-    await message.answer('All your tasks were deleted', reply_markup=keyboard)
+        await message.answer('All your tasks were deleted', reply_markup=keyboard)
+    else:
+        await message.answer('Your TODO list is already empty', reply_markup=keyboard)
     await state.clear()
 
 
@@ -129,7 +131,7 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
                 if i != num - 1:
                     temp.append(user_TODO[user_id][i])
             user_TODO[user_id] = temp
-            await message.answer("Task is delete", reply_markup=todo_keyboard)
+            await message.answer("Task is deleted", reply_markup=todo_keyboard)
     except:
         await message.answer("Please put number not words", reply_markup=todo_keyboard)
     await state.clear()
