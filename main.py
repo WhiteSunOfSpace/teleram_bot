@@ -109,15 +109,22 @@ async def process_todo_add(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     if user_id not in user_TODO:
         user_TODO[user_id] = []
-    user_TODO[user_id].append(message.text)
-    await message.answer('Saved', reply_markup=todo_keyboard)
+    if message.text:
+        user_TODO[user_id].append(message.text)
+        await message.answer('Saved', reply_markup=todo_keyboard)
+    else:
+        await message.answer('The task must be text message')
     await state.clear()
 
 
 @dp.message(F.text == 'Delete task')
 async def cmd_delete(message: types.Message, state: FSMContext):
-    await message.answer('Put the number of task which need to delete')
-    await state.set_state(DeleteState.wait_for_input)
+    user_id = message.from_user.id
+    if len(user_TODO[user_id]) != 0:
+        await message.answer('Put the number of task which need to delete')
+        await state.set_state(DeleteState.wait_for_input)
+    else:
+        await message.answer('Your TODO list is already empty')
 
 
 @dp.message(DeleteState.wait_for_input)
