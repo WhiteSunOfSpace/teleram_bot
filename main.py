@@ -120,7 +120,7 @@ async def process_todo_add(message: types.Message, state: FSMContext):
 @dp.message(F.text == 'Delete task')
 async def cmd_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if len(user_TODO[user_id]) != 0:
+    if user_id in user_TODO and len(user_TODO[user_id]) != 0:
         await message.answer('Put the number of task which need to delete')
         await state.set_state(DeleteState.wait_for_input)
     else:
