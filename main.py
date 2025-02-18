@@ -57,9 +57,11 @@ async def cmd_hello(message: types.Message, state: FSMContext):
 
 @dp.message(F.text == 'Show tasks')
 async def cmd_show(message: types.Message, state: FSMContext):
-    uid = message.from_user.id
-    if uid in user_TODO and user_TODO[uid]:
-        todo_list = "\n".join([f"{num}) {task}" for num, task in enumerate(user_TODO[uid], start=1)])
+    user_id = message.from_user.id
+    tasks = await get_tasks(user_id)
+
+    if tasks:
+        todo_list = "\n".join([f"{num}) {task[0]}" for num, task in enumerate(tasks, start=1)])
         await message.answer(f"Your TODO is:\n{todo_list}", reply_markup=todo_keyboard)
     else:
         await message.answer('Your TODO is empty', reply_markup=todo_keyboard)
@@ -130,11 +132,6 @@ async def cmd_delete(message: types.Message, state: FSMContext):
 async def process_todo_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     tasks = await get_tasks(user_id)
-
-    if not tasks:
-        await message.answer('Your TODO list is empty', reply_markup=todo_keyboard)
-        await state.clear()
-        return
 
     try:
         num = int(message.text)
