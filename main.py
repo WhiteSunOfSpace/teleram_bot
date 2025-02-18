@@ -10,8 +10,6 @@ from flagaccess import TOKEN
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-user_TODO = {}
-
 valid_options = ["Introduction", "Github link", "Use TODO", "Help"]
 
 keyboard = ReplyKeyboardMarkup(
@@ -141,7 +139,7 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
             await message.answer("Invalid task number. Please try again", reply_markup=todo_keyboard)
         else:
             task = tasks[num - 1]
-            await delete_task(task)
+            await delete_task(user_id, task)
             await message.answer("Task deleted successfully", reply_markup=todo_keyboard)
     except:
         await message.answer("Please enter a number", reply_markup=todo_keyboard)
@@ -150,9 +148,6 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
 
 
 async def cmd_act(message: types.Message):
-    user_id = message.from_user.id
-    if user_id not in user_TODO:
-        user_TODO[user_id] = []
     await message.answer('You are in TODO menu now', reply_markup=todo_keyboard)
 
 
