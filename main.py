@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from database import init_db, add_task, get_tasks, delete_task, clear_tasks
 from flagaccess import TOKEN
 
 bot = Bot(token=TOKEN)
@@ -110,6 +111,7 @@ async def process_todo_add(message: types.Message, state: FSMContext):
         await message.answer('Saved', reply_markup=todo_keyboard)
     else:
         await message.answer('The task must be text message')
+    #await add_task(message.from_user.id, message.text)
     await state.clear()
 
 
@@ -166,6 +168,7 @@ async def handle_invalid_message(message: types.Message):
 
 
 async def main():
+    await init_db()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
