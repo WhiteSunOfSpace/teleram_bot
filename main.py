@@ -97,49 +97,56 @@ async def cmd_help(message: types.Message, state: FSMContext):
 
 @dp.message(F.text == 'Add task')
 async def cmd_add(message: types.Message, state: FSMContext):
-    await message.answer('What you want to plan')
+    await message.answer('What do you want to plan?')
     await state.set_state(AddState.wait_for_input)
 
 
 @dp.message(AddState.wait_for_input)
 async def process_todo_add(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if user_id not in user_TODO:
-        user_TODO[user_id] = []
-    if message.text:
-        user_TODO[user_id].append(message.text)
-        await message.answer('Saved', reply_markup=todo_keyboard)
+
+    if message.text.strip():
+        await add_task(user_id, message.text.strip())
+        await message.answer('Saved!', reply_markup=todo_keyboard)
     else:
-        await message.answer('The task must be text message')
-    #await add_task(message.from_user.id, message.text)
+        await message.answer('The task must be a text message')
+
     await state.clear()
 
 
 @dp.message(F.text == 'Delete task')
 async def cmd_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if user_id in user_TODO and len(user_TODO[user_id]) != 0:
-        await message.answer('Put the number of task which need to delete')
+    tasks = await get_tasks(user_id)
+
+    if tasks:
+        await message.answer('Put the number of the task you want to delete:')
         await state.set_state(DeleteState.wait_for_input)
     else:
-        await message.answer('Your TODO list is already empty')
+        await message.answer('Your TODO list is already empty', reply_markup=todo_keyboard)
 
 
 @dp.message(DeleteState.wait_for_input)
 async def process_todo_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if user_id not in user_TODO:
+    tasks = await get_tasks(user_id)
+
+    if not tasks:
         await message.answer('Your TODO list is empty', reply_markup=todo_keyboard)
-    else:
-        try:
-            num = int(message.text)
-            if num - 1 < 0 or num > len(user_TODO[user_id]):
-                await message.answer("Wrong number of input", reply_markup=todo_keyboard)
-            else:
-                del user_TODO[user_id][num - 1]
-                await message.answer("Task is deleted", reply_markup=todo_keyboard)
-        except:
-            await message.answer("Please put number not words", reply_markup=todo_keyboard)
+        await state.clear()
+        return
+
+    try:
+        num = int(message.text)
+        if num < 1 or num > len(tasks):
+            await message.answer("Invalid task number. Please try again", reply_markup=todo_keyboard)
+        else:
+            task = tasks[num - 1]
+            await delete_task(task)
+            await message.answer("Task deleted successfully", reply_markup=todo_keyboard)
+    except:
+        await message.answer("Please enter a number", reply_markup=todo_keyboard)
+
     await state.clear()
 
 
