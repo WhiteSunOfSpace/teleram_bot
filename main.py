@@ -35,10 +35,6 @@ todo_keyboard = ReplyKeyboardMarkup(
 )
 
 
-class TodoState(StatesGroup):
-    wait_for_input = State()
-
-
 class DeleteState(StatesGroup):
     wait_for_input = State()
 
@@ -135,14 +131,10 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
     else:
         try:
             num = int(message.text)
-            temp = []
             if num - 1 < 0 or num > len(user_TODO[user_id]):
                 await message.answer("Wrong number of input", reply_markup=todo_keyboard)
             else:
-                for i in range(len(user_TODO[user_id])):
-                    if i != num - 1:
-                        temp.append(user_TODO[user_id][i])
-                user_TODO[user_id] = temp
+                del user_TODO[user_id][num - 1]
                 await message.answer("Task is deleted", reply_markup=todo_keyboard)
         except:
             await message.answer("Please put number not words", reply_markup=todo_keyboard)
