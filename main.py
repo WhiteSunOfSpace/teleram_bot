@@ -59,7 +59,7 @@ async def cmd_show(message: types.Message, state: FSMContext):
     tasks = await get_tasks(user_id)
 
     if tasks:
-        todo_list = "\n".join([f"{num}) {task[0]}" for num, task in enumerate(tasks, start=1)])
+        todo_list = "\n".join([f"{num}) {task[1]}" for num, task in enumerate(tasks, start=1)])
         await message.answer(f"Your TODO is:\n{todo_list}", reply_markup=todo_keyboard)
     else:
         await message.answer('Your TODO is empty', reply_markup=todo_keyboard)
@@ -120,7 +120,7 @@ async def process_todo_add(message: types.Message, state: FSMContext):
 async def cmd_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     tasks = await get_tasks(user_id)
-
+    await state.update_data(tasks=tasks)
     if tasks:
         await message.answer('Put the number of the task you want to delete:')
         await state.set_state(DeleteState.wait_for_input)
@@ -131,19 +131,18 @@ async def cmd_delete(message: types.Message, state: FSMContext):
 @dp.message(DeleteState.wait_for_input)
 async def process_todo_delete(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    tasks = await get_tasks(user_id)
-
+    data = await state.get_data()
+    tasks = data.get('tasks', [])
     try:
         num = int(message.text)
         if num < 1 or num > len(tasks):
-            await message.answer("Invalid task number. Please try again", reply_markup=todo_keyboard)
+            await message.answer("Invalid task number. Please try again.", reply_markup=todo_keyboard)
         else:
-            task = tasks[num - 1]
-            await delete_task(user_id, task)
-            await message.answer("Task deleted successfully", reply_markup=todo_keyboard)
+            task_id = tasks[num - 1][0]
+            await delete_task(task_id, user_id)
+            await message.answer("Task deleted successfully.", reply_markup=todo_keyboard)
     except:
-        await message.answer("Please enter a number", reply_markup=todo_keyboard)
-
+        await message.answer("Please enter a valid number.", reply_markup=todo_keyboard)
     await state.clear()
 
 
