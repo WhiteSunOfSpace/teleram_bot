@@ -71,8 +71,10 @@ async def cmd_show(message: types.Message, state: FSMContext):
 @dp.message(F.text == 'Clear all')
 async def cmd_clear(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    if user_id in user_TODO and user_TODO[user_id]:
-        user_TODO[user_id].clear()
+    tasks = await get_tasks(user_id)
+
+    if tasks:
+        await clear_tasks(user_id)
         await message.answer('All your tasks were deleted', reply_markup=keyboard)
     else:
         await message.answer('Your TODO list is already empty', reply_markup=keyboard)
