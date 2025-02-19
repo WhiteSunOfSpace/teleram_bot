@@ -1,7 +1,8 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from database import init_db, add_task, get_tasks, delete_task, clear_tasks
@@ -33,12 +34,20 @@ todo_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+confirmation = InlineKeyboardBuilder()
+confirmation.add(InlineKeyboardButton(text="No", callback_data="opt1"))
+confirmation.add(InlineKeyboardButton(text="Yes", callback_data="opt2"))
+
 
 class DeleteState(StatesGroup):
     wait_for_input = State()
 
 
 class AddState(StatesGroup):
+    wait_for_input = State()
+
+
+class ConfirmState(StatesGroup):
     wait_for_input = State()
 
 
@@ -72,10 +81,22 @@ async def cmd_clear(message: types.Message, state: FSMContext):
     tasks = await get_tasks(user_id)
 
     if tasks:
-        await clear_tasks(user_id)
-        await message.answer('All your tasks were deleted', reply_markup=keyboard)
+        await message.answer('Are you sure you want to delete all tasks?', reply_markup=confirmation.as_markup())
+        await state.set_state(ConfirmState.wait_for_input)
     else:
         await message.answer('Your TODO list is already empty', reply_markup=keyboard)
+
+
+@dp.callback_query(ConfirmState.wait_for_input)
+async def handle_callback(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    print(user_id)
+    if callback.data == "opt1":
+        await callback.message.answer("Return to TODO menu", reply_markup=todo_keyboard)
+    else:
+        await clear_tasks(user_id)
+        await callback.message.answer('All your tasks were deleted', reply_markup=keyboard)
+    await callback.answer()
     await state.clear()
 
 
@@ -141,7 +162,7 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
             task_id = tasks[num - 1][0]
             await delete_task(task_id, user_id)
             await message.answer("Task deleted successfully.", reply_markup=todo_keyboard)
-    except:
+    except ValueError:
         await message.answer("Please enter a valid number.", reply_markup=todo_keyboard)
     await state.clear()
 
