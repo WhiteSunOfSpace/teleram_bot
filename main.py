@@ -128,10 +128,11 @@ async def cmd_add(message: types.Message, state: FSMContext):
 async def process_todo_add(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
 
-    if message.text.strip():
-        await add_task(user_id, message.text.strip())
+    try:
+        msg = message.text.strip()
+        await add_task(user_id, msg)
         await message.answer('Saved!', reply_markup=todo_keyboard)
-    else:
+    except AttributeError:
         await message.answer('The task must be a text message')
 
     await state.clear()
