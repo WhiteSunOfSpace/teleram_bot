@@ -58,8 +58,8 @@ async def cmd_start(message: types.Message):
 
 @dp.message(F.text == 'Introduction')
 async def cmd_hello(message: types.Message, state: FSMContext):
+    await state.update_data(last_markup=keyboard)
     await message.answer('This is a bot that I use as a TODO.')
-    await state.clear()
 
 
 @dp.message(F.text == 'Show tasks')
@@ -108,14 +108,14 @@ async def cmd_ext(message: types.Message, state: FSMContext):
 
 @dp.message(F.text == 'Github link')
 async def get_link(message: types.Message, state: FSMContext):
+    await state.update_data(last_markup=keyboard)
     await message.answer("https://github.com/WhiteSunOfSpace")
-    await state.clear()
 
 
 @dp.message(F.text == 'Help')
 async def cmd_help(message: types.Message, state: FSMContext):
+    await state.update_data(last_markup=keyboard)
     await message.answer('If you need help, contact us via whitesunofspace@mail.ru')
-    await state.clear()
 
 
 @dp.message(F.text == 'Add task')
@@ -168,25 +168,28 @@ async def process_todo_delete(message: types.Message, state: FSMContext):
     await state.clear()
 
 
-async def cmd_act(message: types.Message):
+async def cmd_act(message: types.Message, state: FSMContext):
+    await state.update_data(last_markup=todo_keyboard)
     await message.answer('You are in TODO menu now', reply_markup=todo_keyboard)
 
 
 @dp.message(F.text.in_(valid_options))
-async def handle_valid_message(message: types.Message):
+async def handle_valid_message(message: types.Message, state: FSMContext):
     if message.text == "Introduction":
-        await cmd_hello(message)
+        await cmd_hello(message, state)
     elif message.text == "Github link":
-        await get_link(message)
+        await get_link(message, state)
     elif message.text == "Help":
-        await cmd_help(message)
+        await cmd_help(message, state)
     elif message.text == "Use TODO":
-        await cmd_act(message)
+        await cmd_act(message, state)
 
 
 @dp.message()
-async def handle_invalid_message(message: types.Message):
-    await message.answer("Please select an option from the menu.", reply_markup=keyboard)
+async def handle_invalid_message(message: types.Message, state: FSMContext):
+    user_data = await state.get_data()
+    last_markup = user_data.get("last_markup", keyboard)
+    await message.answer("Please select an option from the menu.", reply_markup=last_markup)
 
 
 async def main():
