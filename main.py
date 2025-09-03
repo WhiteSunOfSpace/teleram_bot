@@ -1,3 +1,4 @@
+import os
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -6,7 +7,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from database import init_db, add_task, get_tasks, delete_task, clear_tasks
-from flagaccess import TOKEN
+from flagaccess import TOKEN, path
+from datetime import datetime
+
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -51,6 +54,10 @@ class ConfirmState(StatesGroup):
     wait_for_input = State()
 
 
+class MarkdownState(StatesGroup):
+    wait_to_save_markdown = State()
+
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("Hello, this bot is ready to use:", reply_markup=keyboard)
@@ -90,7 +97,6 @@ async def cmd_clear(message: types.Message, state: FSMContext):
 @dp.callback_query(ConfirmState.wait_for_input)
 async def handle_callback(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    print(user_id)
     if callback.data == "opt1":
         await callback.message.answer("Return to TODO menu", reply_markup=todo_keyboard)
     else:
@@ -186,10 +192,28 @@ async def handle_valid_message(message: types.Message, state: FSMContext):
 
 
 @dp.message()
-async def handle_invalid_message(message: types.Message, state: FSMContext):
-    user_data = await state.get_data()
-    last_markup = user_data.get("last_markup", keyboard)
-    await message.answer("Please select an option from the menu.", reply_markup=last_markup)
+async def handle_message_not_in_keyboard(message: types.Message, state: FSMContext):
+    await message.answer("Save to obsidian?", reply_markup=confirmation.as_markup())
+    await state.set_state(MarkdownState.wait_to_save_markdown)
+    await state.update_data(msg=message.text)
+
+
+@dp.callback_query(MarkdownState.wait_to_save_markdown)
+async def handle_callback_free_message(callback: types.CallbackQuery, state: FSMContext):
+    if callback.data == "opt1":
+        user_data = await state.get_data()
+        last_markup = user_data.get("last_markup", keyboard)
+        await callback.message.answer("So select an option from the menu or put some notes", reply_markup=last_markup)
+    else:
+        user_data = await state.get_data()
+        msg = user_data.get("msg", "")
+        filename = datetime.now().strftime("%d.%m.%Y-%H.%M.%S.md")
+        file_path = os.path.join(path, filename)
+        with open(file_path, "w") as file:
+            file.write(str(msg))
+        await callback.message.answer("Note add to obsidian", reply_markup=keyboard)
+    await callback.answer()
+    await state.clear()
 
 
 async def main():
